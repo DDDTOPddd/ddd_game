@@ -6,7 +6,7 @@
 [Ll]ogs/
 [Pp]ackages/
 Assets/AssetStoreTools*
-
+Assets/TextMesh Pro/Resources/Fonts & Materials*
 .vs/
 
 .consulo/
@@ -22,4 +22,4 @@ Assets/AssetStoreTools*
 *.svd
 *.pdb
 *.opendb
-
+*.asset
