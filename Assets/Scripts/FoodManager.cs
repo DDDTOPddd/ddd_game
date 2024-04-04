@@ -1,10 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.EditorTools;
+
 using UnityEngine;
 
 public class FoodManager : MonoBehaviour
 {
+    public AudioSource audioSource;
+    public AudioClip eat;
     [SerializeField]
     private int totalFoodCount = 0;
     public Hole hole;
@@ -21,11 +21,12 @@ public class FoodManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
+    
     void Start()
     {
+        audioSource = gameObject.GetComponent<AudioSource>();
         GameObject[] foods = GameObject.FindGameObjectsWithTag("food");
         totalFoodCount = foods.Length;
-        // Store the number of food items as needed
     }
     public void AddFood()
     {
@@ -34,6 +35,8 @@ public class FoodManager : MonoBehaviour
 
     public void RemoveFood()
     {
+        audioSource.clip = eat;
+        audioSource.Play();
         totalFoodCount--; 
         if (totalFoodCount <= 0)
         {

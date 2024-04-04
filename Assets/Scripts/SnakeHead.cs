@@ -5,14 +5,15 @@ using UnityEngine.Tilemaps;
 using DG.Tweening;
 using UnityEngine.UIElements;
 using static Unity.Collections.AllocatorManager;
+using Unity.Burst.CompilerServices;
 
 enum SnakeState
 {
-    Move,Win,Fly
+    Move,Win,Fly,Dead
 }
 public class SnakeHead : MonoBehaviour
 {
-
+    public int number;
     private SnakeState snakeState;
     //有关蛇身
     public GameObject snakeBodyPrefab; // 之前准备好的蛇身Prefab
@@ -20,13 +21,23 @@ public class SnakeHead : MonoBehaviour
     [SerializeField]
     private List<Vector2> bodyPositions = new List<Vector2>(); // 用来存储蛇身移动位置的队列
 
+    private  AudioSource audioSource;
+    public AudioClip MoveAudio;
+    public AudioClip ToHole;
+    public AudioClip Boom;
+    public AudioClip Fly;
+    public AudioClip DropAudio;
 
     public GameObject WholeSnake;
     public float moveDistance = 1.0f; // 移动的格子大小
-    public float moveSpeed = 0.01f; // 两次移动之间的时间间隔
+    public float moveSpeed = 0.1f; // 两次移动之间的时间间隔
     private float moveTimer;
     private float WaitTimer = 0;
     // 蛇头各个方向的Sprite
+    public Sprite upSprite_f;
+    public Sprite downSprite_f;
+    public Sprite leftSprite_f;
+    public Sprite rightSprite_f;
     public Sprite upSprite;
     public Sprite downSprite;
     public Sprite leftSprite;
@@ -48,7 +59,7 @@ public class SnakeHead : MonoBehaviour
     private Rigidbody2D q, n, h;
 
     public Tilemap groundTilemap;
-
+    
     private int key = 0;
     bool IsDead ;
 
@@ -56,9 +67,11 @@ public class SnakeHead : MonoBehaviour
     public LayerMask food;
     private LayerMask combinedLayerMask;
     Vector2 moveDirection;
-
+    public  bool canMove;
     void Start()
     {
+        
+        audioSource = gameObject.GetComponent<AudioSource>();
         snakeState = SnakeState.Move;
         moveTimer = 0;
         combinedLayerMask = food | stone;
@@ -66,11 +79,10 @@ public class SnakeHead : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer.sprite = rightSprite;
-
         Vector2 initialPosition = new Vector2(0.5f, 0.5f);
         rb.position = initialPosition;
-
-        for (int i = 0; i < 3; i++)
+        canMove = true;
+        for (int i = 0; i < number; i++)
         {
             Vector2 bodyPosition = initialPosition - new Vector2((i + 1) * moveDistance, 0);
             bodyPositions.Add(bodyPosition);
@@ -90,6 +102,9 @@ public class SnakeHead : MonoBehaviour
             case SnakeState.Fly:
                 FlyUpdate();
                 break;
+            case SnakeState.Dead:
+                DeadUpdate();
+                break;
 
         }
     }
@@ -97,35 +112,39 @@ public class SnakeHead : MonoBehaviour
     {
         moveTimer += Time.deltaTime;
         change(key);
-        if (moveTimer >= moveSpeed)
+        if (moveTimer >= moveSpeed && canMove)
         {
             
             Vector2 oldPosition = rb.position;
             Vector2 newPosition = rb.position;
             Sprite newSprite = spriteRenderer.sprite;
-
+            Sprite fnewSprite = spriteRenderer.sprite;
             if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
             {
                 newPosition.y += moveDistance;
                 newSprite = upSprite;
+                fnewSprite = upSprite_f;
                 moveDirection = Vector2.up;
             }
             else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
             {
                 newPosition.y -= moveDistance;
                 newSprite = downSprite;
+                fnewSprite = downSprite_f;
                 moveDirection = Vector2.down;
             }
             else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 newPosition.x -= moveDistance;
                 newSprite = leftSprite;
+                fnewSprite = leftSprite_f;
                 moveDirection = Vector2.left;
             }
             else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
             {
                 newPosition.x += moveDistance;
                 newSprite = rightSprite;
+                fnewSprite = rightSprite_f;
                 moveDirection = Vector2.right;
             }
             
@@ -134,22 +153,29 @@ public class SnakeHead : MonoBehaviour
 
             if (newPosition != rb.position)
             {
-                int a = CanPushTo(moveDirection);
+                int a = CanPushTo(transform.position, moveDirection);
                 if(a==1)
                 {
+                    audioSource.clip = MoveAudio;
+                    audioSource.Play();
                     moveTimer = 0f;
                     MoveBody(oldPosition);
-                    rb.MovePosition(newPosition); // 移动蛇头
+                    rb.MovePosition(newPosition); 
                     spriteRenderer.sprite = newSprite;
                     if (!HeadIsOnGround())
                     {
-                        print("out");
+                        audioSource.clip = DropAudio;
+                        audioSource.Play();
                         IsDead = true;
+                        snakeState = SnakeState.Dead;
+                        WaitTimer = 0;
 
                     }
                 }
                 else if (a == 2)
                 {
+                    audioSource.clip = MoveAudio;
+                    audioSource.Play();
                     RaycastHit2D hit = Physics2D.Raycast(transform.position, moveDirection, 1f, food);
                     Banana banana = hit.collider.GetComponent<Banana>();
                     if (banana != null)
@@ -169,17 +195,19 @@ public class SnakeHead : MonoBehaviour
                                 break;
                             //辣椒
                             case 2:
+                                canMove = false;
                                 FoodManager.Instance.RemoveFood();
                                 moveTimer = 0f;
                                 MoveBody(oldPosition);
                                 rb.MovePosition(newPosition);
+                                
                                 spriteRenderer.sprite = newSprite;
-                                //***
-                                //吃完辣椒，开始反方向飞行
+                                spriteRenderer.sprite = fnewSprite;
                                 ToFly();
                                 Vector2 FlyDir = -moveDirection;
-                                StartCoroutine(FlyEffect(FlyDir));
-                                ToMove();
+                                StartCoroutine(FlyEffect(FlyDir,newSprite));
+                                
+                                //ToMove();
                                 break;
                         }
                         
@@ -192,22 +220,38 @@ public class SnakeHead : MonoBehaviour
 
 
         }
+        if (!HeadIsOnGround())
+        {
+            audioSource.clip = DropAudio;
+            audioSource.Play();
+            IsDead = true;
+            snakeState = SnakeState.Dead;
+            WaitTimer = 0;
 
-        if (IsDead){
-            
+        }
+        moveDirection = Vector2.zero;
+    }
+    void DeadUpdate()
+    {
+        change(key);
+        if (IsDead)
+        {
             WaitTimer += Time.deltaTime;
             if (WaitTimer > 0.5)
             {
                 key = 1;
                 WholeSnake.GetComponent<WholeSnake>().LinearTo();
-            }
-        }
 
-        moveDirection = Vector2.zero;
+                //UIController.Instance.Dead();
+            }
+            
+        }
     }
+
     public void ToMove()
     {
         snakeState = SnakeState.Move;
+        //canMove = true;
     }
     private void MoveBody(Vector2 headOldPosition)
     {
@@ -359,9 +403,9 @@ public class SnakeHead : MonoBehaviour
         return false;
     }
 
-    int CanPushTo(Vector2 dir)
+    int CanPushTo(Vector2 position ,Vector2 dir)
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, moveDirection, 1f, combinedLayerMask);
+        RaycastHit2D hit = Physics2D.Raycast(position, moveDirection, 1f, combinedLayerMask);
         if (!hit)
         {
             return 1;
@@ -389,20 +433,57 @@ public class SnakeHead : MonoBehaviour
     //进洞
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("hole"))
+        if (snakeState == SnakeState.Move)
         {
-            Hole hole = other.gameObject.GetComponent<Hole>();
-            if (hole!= null && hole.IsOpen())
+            if (other.CompareTag("hole"))
             {
-                print("win");
-                ToWin();
-                StartCoroutine(EnterHoleEffect(hole));
+                Hole hole = other.gameObject.GetComponent<Hole>();
+                if (hole != null && hole.IsOpen())
+                {
+                    print("win");
+                    ToWin();
+                    audioSource.clip = ToHole;
+                    audioSource.Play();
+                    StartCoroutine(EnterHoleEffect(hole));
+                }
+            }
+            if (other.CompareTag("sand"))
+            {
+                Sand sand = other.gameObject.GetComponent<Sand>();
+                if (sand != null && snakeState == SnakeState.Move)
+                {
+                    print("Over");
+                    sand.Tobig();
+                    //********
+                    ToWin();
+                    audioSource.clip = ToHole;
+                    audioSource.Play();
+                    StartCoroutine(EnterHoleEffect(sand));
 
-
+                }
             }
         }
+        
     }
+    IEnumerator EnterHoleEffect(Sand hole)
+    {
+        Vector3 holePosition = hole.transform.position;
 
+        spriteRenderer.enabled = false;
+        MoveBody(holePosition);
+        for (int i = 0; i < snakeBodies.Count; i++)
+        {
+            snakeBodies[i].GetComponent<SpriteRenderer>().enabled = false;
+            for (int j = (snakeBodies.Count) - 1; j > 0; j--)
+            {
+                snakeBodies[j].transform.position = snakeBodies[j - 1].transform.position;
+            }
+            yield return new WaitForSeconds(0.1f);
+        }
+        key = 1;
+        yield return new WaitForSeconds(0.5f);
+        UIController.Instance.Dead();
+    }
     IEnumerator EnterHoleEffect(Hole hole)
     {
         Vector3 holePosition = hole.transform.position;
@@ -419,7 +500,8 @@ public class SnakeHead : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
         key = 1;
-
+        yield return new WaitForSeconds(0.5f);
+        UIController.Instance.Win();
     }
 
     void FlyUpdate()
@@ -431,36 +513,66 @@ public class SnakeHead : MonoBehaviour
         snakeState = SnakeState.Fly;
     }
 
-    IEnumerator FlyEffect(Vector2 flyDirection)
+    IEnumerator FlyEffect(Vector2 flyDirection, Sprite t)
     {
+        change(0);
+        canMove = false;
         yield return new WaitForSeconds(0.5f);
         bool blocked=false;
+
         List<Vector2> nextBodyPositions = new List<Vector2>();
         for (int i = 0; i < bodyPositions.Count; i++)
         {
             nextBodyPositions.Add(bodyPositions[i] );
         }
-        while (!blocked)
+        RaycastHit2D hitf = Physics2D.Raycast(rb.position - flyDirection * 0.5f, -flyDirection, 0.5f, food);
+        if (hitf.collider != null)
         {
-            
+            audioSource.clip = Boom;
+            audioSource.Play();
+            if (hitf.collider.GetComponent<Ice>() != null || hitf.collider.GetComponent<Wood>() != null)
+            {
+                Destroy(hitf.collider.gameObject);
+            }
+        }
+        audioSource.clip = Fly;
+        audioSource.Play();
+        while (!blocked)
+        {    
             for (int i = 0; i < nextBodyPositions.Count; i++)
             {
                 RaycastHit2D hit = Physics2D.Raycast(nextBodyPositions[i] + flyDirection * 0.5f, flyDirection, 0.5f, stone);
-
+                hitf = Physics2D.Raycast(nextBodyPositions[i] + flyDirection * 0.5f, flyDirection, 0.5f, food);
                 if (hit.collider != null && hit.collider.GetComponent<SnakeBody>() == null)
                 {
                     blocked = true;
+                    canMove = true;
+                    audioSource.Stop();
+                    spriteRenderer.sprite = t;
+                    ToMove();
                     yield break;
                 }
+                if (hitf )
+                {
+                    if(hitf.collider.GetComponent<Tui>() != null)
+                    {
+                        int s=hitf.collider.GetComponent<Tui>().CanMoveTo(flyDirection);
+                        if (s == 2)
+                        {
+                            blocked = true;
+                            canMove = true;
+                            audioSource.Stop();
+                            spriteRenderer.sprite = t;
+                            ToMove();
+                            yield break;
+                        }
+                    }
+                }              
             }
-            
-            
-
             for (int i = 0; i < nextBodyPositions.Count; i++)
             {
                 nextBodyPositions[i]+= flyDirection * moveDistance;
             }
-
             Vector2 nextHeadPosition = rb.position + flyDirection * 1;
             yield return new WaitForSeconds(0.1f);
             rb.position = nextHeadPosition;
@@ -475,11 +587,13 @@ public class SnakeHead : MonoBehaviour
             
 
         }
-        yield return new WaitForSeconds(1);
-    }
-    void LoadNextLevel()
-    {
-        // 加载下一个场景或执行胜利逻辑。
-        // 这里可以使用 SceneManager.LoadScene 或其他方法。
+
+        //audioSource.Stop();
+        //canMove = true;
+        //yield return new WaitForSeconds(1);
+        //spriteRenderer.sprite = t;
+        //yield return new WaitForSeconds(1);
+        
+       
     }
 }

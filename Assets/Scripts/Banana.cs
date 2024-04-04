@@ -6,19 +6,27 @@ using UnityEngine.Tilemaps;
 
 public class Banana : Tui
 {
+    private AudioSource audioSource;
+    public AudioClip DropAudio;
     public Tilemap groundTilemap;
     public LayerMask stone;
     public LayerMask food;
     protected  LayerMask combinedLayerMask;
     public float dropSpeed = 60.0f;
     protected bool ShoudDrop = false;
+    private void Start()
+    {
+        audioSource = gameObject.GetComponent<AudioSource>();
+    }
     private void Update()
     {
         if (!IsOnGround())
         {
             gameObject.layer = 0;
+            audioSource.clip = DropAudio;
+            audioSource.Play();
             ShoudDrop = true;
-            
+            UIController.Instance.FoodBeDrop();
         }
         if (ShoudDrop)
         {
@@ -41,7 +49,6 @@ public class Banana : Tui
 
         if (!hits&&!hitf)
         {
-            print("没靠");
             transform.Translate(dir);
             return 1;
         }
@@ -62,23 +69,12 @@ public class Banana : Tui
             }
 
         }
-
         return 0;
 
     }
 
     public virtual int BeEat()
     {
-        // 播放吃掉香蕉的声音（如果有）
-        // AudioSource.PlayClipAtPoint(eatSound, transform.position);
-
-        // 增加玩家的分数（如果游戏有分数系统）
-        // ScoreManager.instance.AddScore(scoreValueForBanana);
-
-        // 也可以在此处生成吃掉时的特效
-        // Instantiate(eatEffectPrefab, transform.position, Quaternion.identity);
-
-        
         Destroy(gameObject);
         return 1;
     }
@@ -90,11 +86,15 @@ public class Banana : Tui
     }
     void Drop()
     {
-        Renderer renderer = gameObject.GetComponent<Renderer>();
+        
+        Transform child = transform.GetChild(0);
+        Renderer renderer = child.GetComponent<Renderer>();
         renderer.sortingLayerName = "background";
         Vector3 newPosition = transform.position;
-        newPosition.y -= dropSpeed * 40*Time.deltaTime;
+        newPosition.y -= dropSpeed * 10 *Time.deltaTime;
         transform.position = newPosition;
         
     }
+
+    
 }

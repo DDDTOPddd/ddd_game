@@ -6,6 +6,7 @@ TagManager:
   tags:
   - food
   - hole
+  - sand
   layers:
   - Default
   - TransparentFX
@@ -16,7 +17,7 @@ TagManager:
   - hole
   - stone
   - food
-  - 
+  - snake
   - 
   - 
   - 

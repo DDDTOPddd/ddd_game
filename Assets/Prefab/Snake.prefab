@@ -13,7 +13,8 @@ GameObject:
   - component: {fileID: 5567880535833364626}
   - component: {fileID: 4373599649225041004}
   - component: {fileID: 3235657267824755391}
-  m_Layer: 0
+  - component: {fileID: 8225659997992521326}
+  m_Layer: 9
   m_Name: Snake
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -102,9 +103,18 @@ MonoBehaviour:
   snakeBodyPrefab: {fileID: 3037075142026165913, guid: d9dec03c5b7afb340b72e637d28dcb89, type: 3}
   snakeBodies: []
   bodyPositions: []
+  MoveAudio: {fileID: 8300000, guid: 99a76f68639d70d4091aff1078c55dbd, type: 3}
+  ToHole: {fileID: 8300000, guid: b1a52c17a342c8748ac8149fdbf0391a, type: 3}
+  Boom: {fileID: 8300000, guid: e2a7f35f03da5a143b5b76e9be84de40, type: 3}
+  Fly: {fileID: 8300000, guid: 392d31848e9649c4890fec0c13161b6b, type: 3}
+  DropAudio: {fileID: 8300000, guid: c7bb5916907e06049a509beff50ca728, type: 3}
   WholeSnake: {fileID: 4194449066194899383, guid: 0cf1949f3795ca84987d8a52279a938f, type: 3}
   moveDistance: 1
   moveSpeed: 0.2
+  upSprite_f: {fileID: -991306630, guid: 34f811e0bb436a846a788bf3b1f7a8a9, type: 3}
+  downSprite_f: {fileID: -1104925243, guid: 34f811e0bb436a846a788bf3b1f7a8a9, type: 3}
+  leftSprite_f: {fileID: 2007666129, guid: 34f811e0bb436a846a788bf3b1f7a8a9, type: 3}
+  rightSprite_f: {fileID: -1126887179, guid: 34f811e0bb436a846a788bf3b1f7a8a9, type: 3}
   upSprite: {fileID: -1144265657, guid: e935577e74344f54c9823a8351cd835c, type: 3}
   downSprite: {fileID: -1546884673, guid: e935577e74344f54c9823a8351cd835c, type: 3}
   leftSprite: {fileID: 2060084011, guid: e935577e74344f54c9823a8351cd835c, type: 3}
@@ -126,6 +136,7 @@ MonoBehaviour:
   food:
     serializedVersion: 2
     m_Bits: 256
+  canMove: 0
 --- !u!61 &4373599649225041004
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -198,3 +209,99 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!82 &8225659997992521326
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4737646727445361930}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.506
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

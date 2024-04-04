@@ -8,6 +8,8 @@ enum HoleState
 }
 public class Hole : MonoBehaviour
 {
+    private AudioSource audioSource;
+    public AudioClip OpenHoleAudio;
     private HoleState holeState = HoleState.off;
     public Sprite big;
     public Sprite small;
@@ -16,6 +18,7 @@ public class Hole : MonoBehaviour
 
     private void Awake()
     {
+        audioSource = gameObject.GetComponent<AudioSource>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         holeCollider = GetComponent<BoxCollider2D>();
         CloseHole();
@@ -41,6 +44,8 @@ public class Hole : MonoBehaviour
 
     public void OpenHole()
     {
+        audioSource.clip = OpenHoleAudio;
+        audioSource.Play();
         holeState = HoleState.on;
         spriteRenderer.sprite = big;
         holeCollider.enabled = true; 
